@@ -1,0 +1,4 @@
+Revision history for Perl extension CGI::Application::Demo.
+
+1.00  Tue 01 Nov 15:00:00 2005
+	- Original version

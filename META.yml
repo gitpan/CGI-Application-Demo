@@ -1,0 +1,42 @@
+--- #YAML:1.0
+name: CGI-Application-Demo
+version: 1.00
+author:
+  - Ron Savage <ron@savage.net.au>
+abstract: A vehicle to showcase CGI::Application
+license: artistic
+requires:
+  CGI::Application: 0
+  CGI::Application::Plugin::Config::Context: 0
+  CGI::Application::Plugin::LogDispatch: 0
+  CGI::Application::Plugin::Session: 0
+  CGI::Session: 0
+  CGI::Simple: 0
+  Carp: 0
+  Class::DBI: 0
+  Class::DBI::Loader: 0
+  Config::Context: 0
+  Config::General: 0
+  FindBin: 0
+  HTML::Template: 0
+  Log::Dispatch::DBI: 0
+build_requires:
+  Test::More: 0
+  Test::Pod: 0
+provides:
+  CGI::Application::Demo:
+    file: lib/CGI/Application/Demo.pm
+    version: 1.00
+  CGI::Application::Demo::Base:
+    file: lib/CGI/Application/Demo/Base.pm
+    version: 1.00
+  CGI::Application::Demo::Create:
+    file: lib/CGI/Application/Demo/Create.pm
+    version: 1.00
+  CGI::Application::Demo::Faculty:
+    file: lib/CGI/Application/Demo/Faculty.pm
+    version: 1.00
+  CGI::Application::Demo::LogDispatchDBI:
+    file: lib/CGI/Application/Demo/LogDispatchDBI.pm
+    version: 1.00
+generated_by: Module::Build version 0.2611

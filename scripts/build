@@ -1,0 +1,7 @@
+#!/bin/bash
+
+dropdb -U postgres cgi_app_demo
+createdb -U postgres cgi_app_demo
+perl create.pl
+perl populate.pl
+
