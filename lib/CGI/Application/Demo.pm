@@ -24,7 +24,7 @@ use Class::DBI::Loader;
 use FindBin::Real;
 use HTML::Template;
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 # -----------------------------------------------
 

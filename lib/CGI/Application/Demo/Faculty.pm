@@ -12,7 +12,7 @@ use warnings;
 
 use base 'CGI::Application::Demo::Base';
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 # --------------------------------------------------
 

@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: CGI-Application-Demo
-version: 1.00
+version: 1.01
 author:
   - Ron Savage <ron@savage.net.au>
 abstract: A vehicle to showcase CGI::Application
@@ -26,17 +26,17 @@ build_requires:
 provides:
   CGI::Application::Demo:
     file: lib/CGI/Application/Demo.pm
-    version: 1.00
+    version: 1.01
   CGI::Application::Demo::Base:
     file: lib/CGI/Application/Demo/Base.pm
-    version: 1.00
+    version: 1.01
   CGI::Application::Demo::Create:
     file: lib/CGI/Application/Demo/Create.pm
-    version: 1.00
+    version: 1.01
   CGI::Application::Demo::Faculty:
     file: lib/CGI/Application/Demo/Faculty.pm
-    version: 1.00
+    version: 1.01
   CGI::Application::Demo::LogDispatchDBI:
     file: lib/CGI/Application/Demo/LogDispatchDBI.pm
-    version: 1.00
+    version: 1.01
 generated_by: Module::Build version 0.2611
