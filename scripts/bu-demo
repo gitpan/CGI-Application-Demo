@@ -1,0 +1,10 @@
+#!/bin/bash
+
+cp $CGIBIN/cgi-app-demo/*.cgi ../cgi-bin/cgi-app-demo
+cp $ASSETS/conf/cgi-app-demo/*.conf ../conf/cgi-app-demo
+cp $ASSETS/css/cgi-app-demo/*.css ../css/cgi-app-demo
+cp $ASSETS/templates/cgi-app-demo/*.tmpl ../templates/cgi-app-demo
+cp $INSTALL/lib/CGI/Application/Demo.pm ../lib/CGI/Application
+cp $INSTALL/lib/CGI/Application/Demo/*.pm ../lib/CGI/Application/Demo
+cp $INSTALL/lib/CGI/Session/Driver/oracle.pm ../lib/CGI/Session/Driver
+

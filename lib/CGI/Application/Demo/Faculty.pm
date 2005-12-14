@@ -12,13 +12,13 @@ use warnings;
 
 use base 'CGI::Application::Demo::Base';
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 # --------------------------------------------------
 
 __PACKAGE__ -> table('faculty');
 __PACKAGE__ -> columns(All => qw/faculty_id faculty_name/);
-__PACKAGE__	-> sequence('faculty_seq') if (__PACKAGE__ -> db_vendor() eq 'Pg');
+__PACKAGE__	-> sequence('faculty_seq') if (__PACKAGE__ -> db_vendor() ne 'mysql');
 
 # --------------------------------------------------
 

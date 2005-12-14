@@ -7,17 +7,15 @@ package CGI::Application::Demo::Base;
 #	Ron Savage <ron@savage.net.au>
 #	Home page: http://savage.net.au/index.html
 
+use base 'Class::DBI'; # Amazing. For MySQL, Oracle and Postgres, use Class::DBI.
 use strict;
 use warnings;
 
-use base 'Class::DBI'; # Amazing. Don't need Class::DBI::Pg nor Class::DBI::Oracle!
-
 use Config::General;
-use FindBin::Real;
 
-my($config);
+my(%config);
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 # --------------------------------------------------
 
@@ -25,7 +23,7 @@ sub dbh
 {
 	my($self) = @_;
 
-	__PACKAGE__ -> db_Main();
+	return __PACKAGE__ -> db_Main();
 
 }	# End of dbh.
 
@@ -34,9 +32,9 @@ sub dbh
 sub db_vendor
 {
 	my($self)	= @_;
-	my($vendor)	= $$config{'dsn'} =~ /[^:]+:([^:]+):/;
+	my($vendor)	= $config{'dsn'} =~ /^dbi:(\w+):/i;
 
-	$vendor;
+	return $vendor;
 
 }	# End of db_vendor.
 
@@ -65,22 +63,21 @@ sub last_insert_id
 		$id = $$id[0];
 	}
 
-	$id;
+	return $id;
 
 }	# End of last_insert_id.
 
 # --------------------------------------------------
-# Scripts using this will be CGI scripts.
-# See also Demo.pm's sub cgiapp_init().
-# Assumed directory structure:
-#	./cgi-bin/cgi-app-demo/cgi-app-demo.cgi
-#	./conf/cgi-app-demo/cgi-app-demo.conf
+# Scripts using this will be CGI scripts but not command line scripts.
 
-my($config_file)	= FindBin::Real::Bin() . '/../../conf/cgi-app-demo/cgi-app-demo.conf';
-my(%config)			= Config::General -> new($config_file) -> getall();
-$config				= $config{'Location'}{'/cgi-bin/cgi-app-demo/cgi-app-demo.cgi'};
+my($config_file) =
+	$^O eq 'MSWin32'
+	? '/apache2/conf/cgi-app-demo'
+	: '/web/assets/conf/cgi-app-demo';
+$config_file	.= '/cgi-app-five.conf';
+%config			= Config::General -> new($config_file) -> getall();
 
-__PACKAGE__ -> set_db('Main', $$config{'dsn'}, $$config{'username'}, $$config{'password'}, $$config{'dsn_attribute'});
+__PACKAGE__ -> set_db('Main', $config{'dsn'}, $config{'username'}, $config{'password'}, $config{'dsn_attribute'});
 
 # --------------------------------------------------
 

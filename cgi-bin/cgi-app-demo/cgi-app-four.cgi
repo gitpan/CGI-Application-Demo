@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 #
 # Name:
-#	cgi-app-demo.cgi.
+#	cgi-app-four.cgi.
 #
 # Author:
 #	Ron Savage <ron@savage.net.au>
@@ -17,10 +17,10 @@ use lib '/web/lib';
 use strict;
 use warnings;
 
-use CGI::Application::Demo;
+use CGI::Application::Demo::Four;
 
 # -----------------------------------------------
 
 delete @ENV{'BASH_ENV', 'CDPATH', 'ENV', 'IFS', 'PATH', 'SHELL'}; # For security.
 
-CGI::Application::Demo -> new() -> run();
+CGI::Application::Demo::Four -> new() -> run();

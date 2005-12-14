@@ -19,7 +19,7 @@ function set(rm)
 <body>
 	<div align='center' class='cgi_app_heading'>CGI::Application::Demo - <tmpl_var name=title></div>
 	<form method="post" name="cgi_app" action="<tmpl_var name=url>" enctype="application/x-www-form-urlencoded">
-		<tmpl_var name=content>
+		<tmpl_var name=content><br />
 		<input type="hidden" name="rm" value="<tmpl_var name=rm>" />
 		<input type="hidden" name="CGISESSID" value="<tmpl_var name=sid>" />
 	</form>

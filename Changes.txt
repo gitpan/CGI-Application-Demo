@@ -1,5 +1,16 @@
 Revision history for Perl extension CGI::Application::Demo.
 
+1.02  Mon 28 Nov 14:58:00 2005
+	- Add One.pm, Two.pm, Three.pm, Four.pm and Five.pm, with corresponding
+		config and template files, and instance scripts. These module are
+		graduated in complexity, and help probe a programming environment.
+	- Document those modules. Documentation is in Demo.pm; the above modules do not
+		have their own documentation
+	- Split out into a separate document the notes on the indirectly required
+		modules
+	- Extend the testing environment to include Oracle 10gR1.
+		This included writing CGI::Session::Driver::oracle
+
 1.01  Fri 11 Nov 09:19:00 2005
 	- Change some option values in the shipped config file
 

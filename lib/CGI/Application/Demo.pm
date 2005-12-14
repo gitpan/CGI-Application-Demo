@@ -19,12 +19,10 @@ require 5.005_62;
 use CGI::Application::Plugin::Config::Context;
 use CGI::Application::Plugin::LogDispatch;
 use CGI::Application::Plugin::Session;
-#use CGI::Simple. 'Require'd below.
+use CGI::Simple;
 use Class::DBI::Loader;
-use FindBin::Real;
-use HTML::Template;
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 # -----------------------------------------------
 
@@ -190,8 +188,6 @@ sub cgiapp_get_query
 {
 	my($self) = @_;
 
-	require CGI::Simple;
-
 	return CGI::Simple -> new();
 
 }	# End of cgiapp_get_query.
@@ -202,9 +198,12 @@ sub cgiapp_init
 {
 	my($self) = @_;
 
-	# Scripts using this are assumed to be CGI scripts.
+	# Warning: When running a CGI script from the command line, omit the 'nfs/' everywhere.
 
-	my($config_file) = FindBin::Real::Bin() . '/../../conf/cgi-app-demo/cgi-app-demo.conf';
+	my($config_file) =
+		$^O eq 'MSWin32'
+		? '/apache2/conf/cgi-app-demo/cgi-app-demo.conf'
+		: '/web/assets/conf/cgi-app-demo/cgi-app-demo.conf';
 
 	$self -> conf() -> init(file => $config_file);
 
@@ -228,9 +227,10 @@ sub cgiapp_init
 	my($loader) = Class::DBI::Loader -> new
 	(
 		constraint		=> '^faculty$',
-		dsn				=> $self -> param('dsn'),
+		dsn				=> $$config{'dsn'},
 		user			=> $$config{'username'},
 		password		=> $$config{'password'},
+		options			=> $$config{'dsn_attribute'},
 		namespace		=> '',
 		relationships	=> 1,
 	);
@@ -238,16 +238,25 @@ sub cgiapp_init
     $self -> setup_db_interface($loader);
 	$self -> param(dbh => ${$self -> param('cgi_app_demo_classes')}[0] -> db_Main() );
 
-	# Set up interface to CGI::Session.
+	# Set up interface to logger.
 
-	#my($attribute) = $self -> db_vendor() eq 'x'
-	#					? {Handle => $self -> param('dbh')}
-	#					: {Directory => $$config{'session_directory'}};
-	my($attribute) = {Handle => $self -> param('dbh')};
+	$self -> log_config
+	(
+		LOG_DISPATCH_MODULES =>
+		[{
+			dbh			=> $self -> param('dbh'),
+			min_level	=> 'info',
+			module		=> 'CGI::Application::Demo::LogDispatchDBI',
+			name		=> 'CGI::Application::Demo::LogDispatchDBI',
+		},
+		]
+	);
+
+	# Set up interface to CGI::Session.
 
 	$self -> session_config
 	(
-		CGI_SESSION_OPTIONS => [$$config{'session_driver'}, $self -> query(), $attribute],
+		CGI_SESSION_OPTIONS => [$$config{'session_driver'}, $self -> query(), {Handle => $self -> param('dbh')}],
 		DEFAULT_EXPIRY		=> $$config{'session_timeout'},
 		SEND_COOKIE			=> 0,
 	);
@@ -297,17 +306,6 @@ sub cgiapp_init
 			$self -> session() -> param($_ => $value);
 		}
 	}
-
-	$self -> log_config
-	(
-		LOG_DISPATCH_MODULES =>
-		[{
-			dbh			=> $self -> param('dbh'),
-			min_level	=> 'info',
-			module		=> 'CGI::Application::Demo::LogDispatchDBI',
-			name		=> 'CGI::Application::Demo',
-		}]
-	);
 
 }	# End of cgiapp_init.
 
@@ -427,11 +425,10 @@ sub setup_db_interface
 sub start
 {
 	my($self)		= shift;
+	my($config)		= $self -> param('config');
 	my($submit)		= $self -> query() -> param('submit') || '';
-	my($template)	= $self -> load_tmpl('cgi-app-global.tmpl');
+	my($template)	= $self -> load_tmpl($$config{'tmpl_name'});
 	my($content)	= $self -> build_basic_pane($submit) . $self -> build_options_pane($submit);
-
-	$self -> log() -> info('Called start');
 
 	$template -> param(content => $content);
 	$template -> param(css_url => $self -> param('css_url') );
@@ -451,7 +448,7 @@ sub update_options
 	my($self)	= @_;
 	my(@key)	= keys %{${$self -> param('key')}{'option'} };
 
-	$self -> log() -> info('Called update_options');
+	$self -> log() -> info('Called update_options()');
 
 	my($value, $default, $minimum, $maximum);
 
@@ -498,14 +495,13 @@ C<CGI::Application::Demo> - A vehicle to showcase CGI::Application
 
 =head1 Description
 
-C<CGI::Application::Demo> is a vehicle for the delivery of a sample C<CGI::Application>
-application, with these components:
+C<CGI::Application::Demo> is a vehicle for the delivery of a sample C<CGI::Application> application, with these components:
 
 =over 4
 
-=item A CGI instance script
+=item A set of CGI instance scripts
 
-=item A text configuration file
+=item A set of text configuration files
 
 =item A CSS file
 
@@ -521,6 +517,16 @@ application, with these components:
 
 =item CGI::Application::Demo
 
+=item CGI::Application::Demo::One
+
+=item CGI::Application::Demo::Two
+
+=item CGI::Application::Demo::Three
+
+=item CGI::Application::Demo::Four
+
+=item CGI::Application::Demo::Five
+
 =item CGI::Application::Demo::Base
 
 =item CGI::Application::Demo::Create
@@ -533,10 +539,11 @@ application, with these components:
 
 =back
 
-This module, C<CGI::Application::Demo>, demonstrates various features available to
-programs based on C<CGI::Application>:
+This module, C<CGI::Application::Demo>, demonstrates various features available to programs based on C<CGI::Application>:
 
 =over 4
+
+=item Probing a strange environment
 
 =item Run modes and their subs
 
@@ -554,11 +561,9 @@ programs based on C<CGI::Application>:
 
 =item Overriding the default query object
 
-This replaces a C<CGI> object with a ligher-weight C<CGI::Simple> object.
+This replaces a C<CGI> object with a lighter-weight C<CGI::Simple> object.
 
 =item Initialization via a configuration file
-
-This uses C<FindBin::Real> to locate the config file at run time.
 
 =item Switching database servers via the config file
 
@@ -570,8 +575,8 @@ See C<CGI::Application::Demo::LogDispatchDBI>.
 
 =back
 
-Note: Because I use C<Class::DBI::Loader>, which wants a primary key in every table,
-and I use C<CGI::Session>, I changed the definition of my 'sessions' table from this:
+Note: Because I use C<Class::DBI::Loader>, which wants a primary key in every table, and I use C<CGI::Session>,
+I changed the definition of my 'sessions' table from this:
 
 	create table sessions
 	(
@@ -583,20 +588,191 @@ to this:
 
 	create table sessions
 	(
-		id char(32) not null primary key,
-		a_session text not null
+		id char(32) not null primary key, # I.e.: 'unique' => 'primary key'.
+		a_session text not null           # For Oracle, 'text' => 'long'.
 	);
 
 compared to what's recommended in the C<CGI::Session> docs.
 
-Also, as you add complexity to this code, you may find it necessary to change line 13
-of Base.pm from this:
+Also, as you add complexity to this code, you may find it necessary to change line 10 of Base.pm from this:
 
 	use base 'Class::DBI';
 
 to something like this:
 
-	use base $^O eq 'MSWin32' ? 'Class::DBI' : 'Class::DBI::Pg'; # 'Class::DBI::Oracle';
+	use base $^O eq 'MSWin32' ? 'Class::DBI' : 'Class::DBI::Pg'; # Or 'Class::DBI::Oracle';
+
+=head1 Probing a Strange Environment
+
+The five modules One.pm .. Five.pm  have been designed so as to be graduated in complexity from simplistic to complex,
+to help you probe the preculiarities of a strange environment.
+
+Each module ships with a corresponding config file, instance script and template. Well, actually, One.pm and Two.pm are too simple
+to warrant their own config files, and One.pm does not even need a template.
+
+In each case, you are advised to examine the code in these modules while reading what follows.
+
+Our plan then becomes:
+
+=over 4
+
+=item Run cgi-app-lib.cgi
+
+This just tests your usage of 'use lib ...'.
+
+By commenting this out, or not, you can check you're actually finding the system's C<CGI.pm>, or the one you installed.
+
+Of course you can do this for any module, not just C<CGI.pm>.
+
+When that's working, move on.
+
+=item Use C<One.pm>
+
+Run via cgi-app-one.cgi.
+
+This adds usage of a module based on C<CGI::Application>, but the module itself has, deliberately, no complexity of its own.
+It simple display a build-in web page.
+
+When that's working, move on.
+
+=item Use C<Two.pm>
+
+Run via cgi-app-two.cgi.
+
+This adds:
+
+=over 4
+
+=item Replacing C<CGI> with C<CGI::Simple>
+
+See C<sub cgiapp_get_query()>.
+
+=item Using C<HTML::Template>-style templates
+
+See C<sub cgiapp_init()> and C<sub start()>.
+
+=back
+
+When that's working, move on.
+
+=item Use C<Three.pm>
+
+Run via cgi-app-three.cgi.
+
+This adds:
+
+=over 4
+
+=item Using C<CGI::Application::Plugin::Config::Context>
+
+Here for the first time we read a config file.
+
+Naturally, you'll need to edit the config file to suit your environment.
+
+=back
+
+When that's working, move on.
+
+=item Use C<Four.pm>
+
+Run via cgi-app-four.cgi.
+
+This adds:
+
+=over 4
+
+=item Using a CSS file
+
+=item Getting a CSS's url from the config file
+
+=item Getting a DSN, username, password and attributes from the config file
+
+Now we're testing a more complex config file.
+
+=item Use C<DBI>
+
+And we use those parameters to test a direct connexion to the database.
+
+We use this connexion to display all records in the C<faculty> table, using the CSS's url.
+
+The C<faculty> table has no purpose other than to provide data to be displayed, either via C<DBI> or via C<Class::DBI>.
+
+=back
+
+When that's working, move on.
+
+=item Use C<Five.pm>
+
+Run via cgi-app-five.cgi.
+
+WARNING
+
+But first a warning. C<Base.pm> is used by both C<Five.pm> and C<Demo.pm>. You must edit line 77 of C<Base.pm>
+to say either 'cgi-app-five.conf' or 'cgi-app-demo.conf', depending on which module you are testing.
+
+Five.pm adds:
+
+=over 4
+
+=item Using a base module, C<Base.pm>, for all table modules
+
+Actually, there's only per-table module, Faculty.pm, at this time, but at least you can see how to use a base module to share code
+across table modules.
+
+=item Using a dedicated module for the C<faculty> table: C<Faculty.pm>
+
+=item Using C<Class::DBI::Loader>
+
+This uses C<Class::DBI> to automatically load a module-per-table. C<DBIx::Class> provides similar features, but I've never used it.
+
+As above, we just display all records in the C<faculty> table.
+
+=back
+
+By now, if successful, you will have tested all the components of C<Demo.pm>, one-by-one.
+
+So, the next step is obvious...
+
+=item Use C<Demo.pm>
+
+Run via cgi-app-demo.cgi.
+
+This adds
+
+=over 4
+
+=item Using C<CGI::Application::Plugin::LogDispatch>
+
+Now we log things to a database table via C<LogDispatchDBI.pm> (below).
+
+=item Using C<CGI::Application::Plugin::Session>
+
+Now we use sessions stored in the database via C<CGI::Session>.
+
+Install my module C<CGI::Session::Driver::oracle>, if necessary.
+
+=item C<Create.pm>
+
+The code to drop tables, create tables, and populate tables is all in this module.
+
+This was a deliberate decision. For example, when everything's up and running, there is no need for your per-table modules such as
+C<Faculty.pm> to contain code to do with populating tables, especially constant tables (as C<faculty> is in this demo).
+
+=item C<Base.pm>
+
+A module to share code between all per-table modules.
+
+=item C<Faculty.pm>
+
+A module dedicated to a specific table.
+
+=item C<LogDispatchDBI.pm>
+
+A module to customize logging via C<Log::Dispatch::DBI>.
+
+=back
+
+=back
 
 =head1 Distributions
 
@@ -684,8 +860,6 @@ So, sub start() is called, and it does whatever we told it to do. The app is up 
 
 =item Config::General
 
-=item FindBin::Real
-
 =item HTML::Template
 
 =item Log::Dispatch::DBI
@@ -694,250 +868,32 @@ So, sub start() is called, and it does whatever we told it to do. The app is up 
 
 =head1 Prerequisites of the Required Modules
 
-Of course, the above modules depend on others. Here's a list I kept when I recently
-installed them all on a PC not connected to the internet.
+This list has been moved into a separate document:
 
-The list also includes a very small number of modules not directly relevant to C<CGI::Application::Demo>,
-but does conveniently include those modules required by C<DBIx::Admin>. This saves me having
-to copy this list into the docs for C<DBIx::Admin>.
-
-And yes, this list does include some shipped with Perl.
-
-Firstly though, I install GnuPG, since Module::Signature would like to play with it.
-
-This is not a Perl module, but is a package from  http://www.gnupg.org/.
-
-Then, I install these Perl modules manually in this order (i.e. before using my
-unreleased Local::Build to install the rest). 'Manual' here really means I need
-these to install Local::Build.
-
-In each case, I use the 'Perl Makefile.PL' method of installing,
-except for C<Module::Build>, which insists on 'Perl Build.PL'.
-
-Also, the latter module complains, so I install it twice.
-
-=over 4
-
-=item CGI
-
-=item HTML::Template
-
-=item IPC::Run3
-
-=item ExtUtils::MakeMaker
-
-=item ExtUtils::CBuilder
-
-=item ExtUtils::ParseXS
-
-=item Digest
-
-=item Digest::SHA
-
-=item PAR::Dist
-
-=item Module::Signature
-
-This module asks you one question during installation (sigh).
-
-=item Module::Build
-
-=item Module::Which
-
-=item DBI
-
-=item PathTools
-
-=item Algorithm::Diff
-
-=item Archive::Tar
-
-=item Compress::Zlib
-
-=item IO::Zlib
-
-=item Text::Diff
-
-=item YAML
-
-=back
-
-Having installed those, I now install some of my own modules, in this order:
-
-=over 4
-
-=item Local::Run3
-
-=item Local::Build
-
-=back
-
-Now, all of the following modules can be installed using C<Local::Build>,
-in this order:
-
-=over 4
-
-=item Devel::Symdump
-
-=item Test::Harness
-
-=item Test::Simple
-
-=item Pod::Escapes
-
-=item Pod::Simple
-
-=item Pod::Parser
-
-=item Pod::Coverage
-
-=item Test::Pod
-
-=item Test::Pod::Coverage
-
-=item Sub::Uplevel
-
-=item Test::Exception
-
-=item UNIVERSAL::moniker
-
-=item UNIVERSAL::require
-
-=item Hook::LexWrap
-
-=item Sub::WrapPackages
-
-=item Clone
-
-=item version
-
-=item Storable
-
-=item FindBin::Real
-
-=item File::Temp
-
-=item HTML::Entities::Interpolate
-
-=item HTML::FillInForm
-
-=item HTML::Parser
-
-=item Scalar::List::Utils
-
-=item CGI::Simple
-
-=item CGI::Session
-
-=item SQL::Statement
-
-=item Text::CSV_XS
-
-=item DBD::CSV
-
-=item Return::Value
-
-=item Email::Address
-
-=item Email::Simple
-
-=item Email::Send
-
-=item Attribute::Handlers
-
-=item Params::Validate
-
-=item DBI
-
-=item DBD::mysql
-
-=item DBD::Pg
-
-=item DBIx::HTML::PopupRadio
-
-=item Class::Accessor
-
-=item Class::Accessor::Chained
-
-=item Data::Page
-
-=item IO::stringy
-
-=item Class::Data::Inheritable
-
-=item Class::ISA
-
-=item Class::Trigger
-
-=item DBIx::ContextualFetch
-
-=item Ima::DBI
-
-=item Class::DBI
-
-=item Class::DBI::mysql
-
-=item Class::DBI::Oracle
-
-=item Class::DBI::Pg
-
-=item Class::DBI::Loader
-
-=item Log::Dispatch
-
-=item Log::Dispatch::DBI
-
-=item Hash::Merge
-
-=item Config::General
-
-=item Config::Context
-
-=item CGI::Application
-
-=item CGI::Application::Plugin::Config::Context
-
-=item CGI::Application::Plugin::LogDispatch
-
-=item CGI::Application::Plugin::Session
-
-=item Tie::Function
-
-=item Time::HiRes
-
-=item Time::Piece
-
-=item Lingua::EN::Inflect
-
-=item Lingua::EN::Numbers
-
-=back
-
-The end result of this is a list of modules needed by any C<CGI::Application>-type app
-which uses a few plugins.
+http://savage.net.au/Perl-modules/html/modules-for-a-new-pc.html
 
 =head1 Installing the non-Perl components of this module
 
 Unpack the distro, and you'll see various directories to be moved to where your web server
-can find them. I'll assume you're running Apache, and hence I suggest these locations:
+can find them.
 
 =over 4
 
-=item cgi-bin/cgi-app-demo/
+=item $distro/cgi-bin/cgi-app-demo/
 
-Copy this cgi-app-demo/ to Apache's cgi-bin/.
+These are CGI scripts.
 
-=item conf/cgi-app-demo/
+=item $distro/conf/cgi-app-demo/
 
-Copy this cgi-app-demo/ to Apache's conf/.
+These are config files.
 
-=item css/cgi-app-demo/
+=item $distro/css/cgi-app-demo/
 
-Copy css/ to Apache's document root.
+This is the one CSS file.
 
-=item templates/cgi-app-demo/
+=item $distro/templates/cgi-app-demo/
 
-Copy templates/ to Apache's document root.
+These are the templates.
 
 =back
 
@@ -947,41 +903,24 @@ I realise all this seems to be a bit of an effort, but once you appreciate
 the value of such configuation options, you'll adopt them as enthusiastically
 as I have done. And you only do this once.
 
-Here I just list the lines you should at least consider editing:
+Here I just list the lines you should at least consider editing. Similar comments apply to all *.conf and *.pm files.
 
 =over 4
 
 =item cgi-app-demo.conf
 
-	<Location /cgi-bin/cgi-app-demo/cgi-app-demo.cgi>
-
 	css_url=/css/cgi-app-demo/cgi-app-demo.css
-
 	dsn=dbi:mysql:cgi_app_demo, username and password
-
+	session_driver=driver:Oracle
 	tmpl_path=/apache2/htdocs/templates/cgi-app-demo/
 
 =item Demo.pm
 
-	my($config_file) = FindBin::Real::Bin() . '/../../conf/cgi-app-demo/cgi-app-demo.conf';
+	my($config_file) = ...;
 
 =item Base.pm
 
-	my($config_file) = FindBin::Real::Bin() . '/../../conf/cgi-app-demo/cgi-app-demo.conf';
-
-Also, if you edited the Location line in cgi-app-demo.conf, make a matching change here:
-
-	$config = $config{'Location'}{'/cgi-bin/cgi-app-demo/cgi-app-demo.cgi'};
-
-=item Create.pm
-
-Again, if you edited the Location line in cgi-app-demo.conf, make a matching change here:
-
-	my($config) = $config{'Location'}{'/cgi-bin/cgi-app-demo/cgi-app-demo.cgi'};
-
-Note also this line, although you won't need to edit it if you stick to these instructions:
-
-	$input_file_name = FindBin::Real::Bin() . "/../data/$input_file_name";
+	my($config_file) = ...;
 
 =item cgi-bin/cgi-app-demo/cgi-app-demo.cgi
 
@@ -989,10 +928,9 @@ Patch the 'use lib' line if you've installed your modules in a non-standard loca
 
 =item $distro/scripts/test-conf.pl
 
-Patch these two lines, if necessary:
+Patch, if necessary:
 
-	my($config_file) = "$ENV{'CONFIG'}/cgi-app-demo.conf";
-	my($config)      = $config{'Location'}{'/cgi-bin/cgi-app-demo/cgi-app-demo.cgi'};
+	my($config_file) = "$ENV{'ASSETS'}/conf/cgi-app-demo/cgi-app-demo.conf";
 
 =item $distro/scripts/drop.pl, create.pl and populate.pl
 
@@ -1000,27 +938,35 @@ In these, you need to set the environment variables (which are not used by *.cgi
 
 =over 4
 
-=item CONFIG=/apache2/conf
+=item ASSETS=/apache2
 
 =item INSTALL=/perl/site/lib
 
 =back
 
-Then you might need to edit this line (if you edited the Location line in cgi-app-demo.conf):
-
-	config_file_name => "$ENV{'CONFIG'}/cgi-app-demo/cgi-app-demo.conf"
-
 =back
 
 =head1 Initializing the Database
 
-OK. Now edit distro/scripts/build or distro/scripts/build.bat to suit.
+Lastly, cd $distro/scripts/ and create and populate the database:
 
-Lastly, cd $distro/scripts/ and run ./build or build.bat from the command line. This creates
-and populates the database.
+=over 4
 
-Finally, point your web client at http://127.0.0.1/cgi-bin/cgi-app-demo/cgi-app-demo.cgi
-and see what happens.
+=item perl drop.pl
+
+=item perl create.pl
+
+=item perl populate.pl
+
+And finish off with...
+
+=item test-conf.pl
+
+=back
+
+Now test http://127.0.0.1/cgi-bin/cgi-app-demo/cgi-app-lib.cgi, and each of cgi-app-(one,two,three,four,five).cgi in turn.
+
+Finally, point your web client at http://127.0.0.1/cgi-bin/cgi-app-demo/cgi-app-demo.cgi and see what happens.
 
 =head1 A Note about C<HTML::Entities>
 
@@ -1039,9 +985,11 @@ This demo does not yet need or use C<HTML::Entities::Interpolate>.
 
 =head1 Test Environments
 
-I've tested this module in these environments:
+I've tested these modules in these environments:
 
 =over 4
+
+=item GNU/Linux, Perl 5.8.0, Oracle 10gR1, Apache 1.3.33
 
 =item GNU/Linux, Perl 5.8.0, Postgres 7.4.7, Apache 2.0.46
 
@@ -1055,7 +1003,7 @@ I drew significant inspiration from code in the C<CGI::Application::Plugin::BREA
 
 http://charlotte.pm.org/kwiki/index.cgi?BreadProject
 
-I used those ideas to write my own bakermaker, the soon-to-be-released (Nov '05) C<DBIx::Admin>.
+I used those ideas to write my own bakermaker, the soon-to-be-released (Dec '05) C<DBIx::Admin>.
 
 In fact, the current module is a cut-down version of C<DBIx::Admin>.
 

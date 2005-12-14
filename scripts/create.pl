@@ -13,6 +13,6 @@ use CGI::Application::Demo::Create;
 
 CGI::Application::Demo::Create -> new
 (
-	config_file_name => "$ENV{'CONFIG'}/cgi-app-demo/cgi-app-demo.conf"
+	config_file_name => "$ENV{'ASSETS'}/conf/cgi-app-demo/cgi-app-demo.conf"
 ) -> create_all_tables();
 

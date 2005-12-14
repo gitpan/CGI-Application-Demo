@@ -35,7 +35,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 
 );
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 # -----------------------------------------------
 
@@ -81,7 +81,7 @@ sub create_all_tables
 
 sub create_faculty_table
 {
-	my($self	)		= @_;
+	my($self)			= @_;
 	my($table_name)		= 'faculty';
 	my($primary_key)	= $self -> describe_primary_key($table_name);
 
@@ -126,13 +126,14 @@ sub create_sessions_table
 {
 	my($self) 		= @_;
 	my($table_name)	= 'sessions';
+	my($type)		= $$self{'_db_vendor'} eq 'Oracle' ? 'long' : 'text';
 
 	$self -> drop_table($table_name);
 	$$self{'_dbh'} -> do(<<SQL);
 create table sessions
 (
 id char(32) not null primary key,
-a_session text not null
+a_session $type not null
 )
 SQL
 
@@ -144,13 +145,14 @@ sub describe_primary_key
 {
 	my($self, $table_name) = @_;
 
-	# MySQL || Postgres.
-	# Postgres via ODBC under Windows doesn't work,
+	# Postgres 8.0 via ODBC under Windows doesn't work,
 	# in that "default nextval('${table_name}_seq')" is ignored.
 
-	($$self{'_db_vendor'} eq 'mysql')
+	$$self{'_db_vendor'} eq 'mysql'
 	? 'integer auto_increment not null primary key'
-	: "integer primary key default nextval('${table_name}_seq')";
+	: $$self{'_db_vendor'} eq 'Oracle'
+	? 'integer primary key'
+	: "integer primary key default nextval('${table_name}_seq')"; # Postgres.
 
 }	# End of describe_primary_key.
 
@@ -182,18 +184,30 @@ sub drop_table
 {
 	my($self, $table_name) = @_;
 
-	if ($$self{'_db_vendor'} eq 'mysql')
+	if ($$self{'_db_vendor'} eq 'Oracle')
 	{
+		eval{$$self{'_dbh'} -> do("drop sequence ${table_name}_seq")};
 	}
-	else # Postgres.
+	elsif ($$self{'_db_vendor'} eq 'Pg')
 	{
-		eval{$$self{'_dbh'} -> do("drop index ${table_name}_pkey")};
+		eval{$$self{'_dbh'} -> do("drop index ${table_name}_pkey on $table_name")};
 		eval{$$self{'_dbh'} -> do("drop sequence ${table_name}_seq")};
 	}
 
 	eval{$$self{'_dbh'} -> do("drop table $table_name")};
 
 }	# End fo drop_table.
+
+# -----------------------------------------------
+
+sub dump_options
+{
+	my($self) = @_;
+
+	print "Options from file: $$self{'_config_file_name'}: \n";
+	print map{"$_ => $$self{'_config'}{$_}. \n"} sort keys %{$$self{'_config'} };
+
+}	# End of dump_options.
 
 # -----------------------------------------------
 
@@ -218,15 +232,15 @@ sub new
 
 	croak(__PACKAGE__ . ". You must supply a value for 'config_file_name'") if (! $$self{'_config_file_name'});
 
-	my(%config)				= Config::General -> new($$self{'_config_file_name'}) -> getall();
-	my($config)				= $config{'Location'}{'/cgi-bin/cgi-app-demo/cgi-app-demo.cgi'};
-	($$self{'_db_vendor'})	= $$config{'dsn'} =~ /[^:]+:([^:]+):/;
+	$$self{'_config'}		= Config::General -> new($$self{'_config_file_name'});
+	$$self{'_config'}		= {$$self{'_config'} -> getall()};
+	($$self{'_db_vendor'})	= $$self{'_config'}{'dsn'} =~ /[^:]+:([^:]+):/;
 	$$self{'_dbh'}			= DBI -> connect
 	(
-		$$config{'dsn'},
-		$$config{'username'},
-		$$config{'password'},
-		$$config{'dsn_attribute'}
+		$$self{'_config'}{'dsn'},
+		$$self{'_config'}{'username'},
+		$$self{'_config'}{'password'},
+		$$self{'_config'}{'dsn_attribute'}
 	);
 
 	return $self;
@@ -249,7 +263,10 @@ sub populate_faculty_table
 {
 	my($self)	= @_;
 	my($data)	= $self -> read_file('faculty.txt');
-	my($sth)	= $$self{'_dbh'} -> prepare('insert into faculty (faculty_name) values (?)');
+	my($sql)	= $$self{'_db_vendor'} eq 'Oracle'
+					? 'insert into faculty (faculty_id, faculty_name) values (faculty_seq.nextval, ?)'
+					: 'insert into faculty (faculty_name) values (?)';
+	my($sth)	= $$self{'_dbh'} -> prepare($sql);
 
 	$sth -> execute($_) for @$data;
 	$sth -> finish();
@@ -257,6 +274,7 @@ sub populate_faculty_table
 }	# End of populate_faculty_table.
 
 # --------------------------------------------------
+# Scripts using this will be command line scripts.
 # Assumed directory structure:
 #	./data/faculty.txt
 #	./scripts/populate.pl
