@@ -33,7 +33,7 @@ WriteMakefile
 		Class::DBI									=> 0,
 		Class::DBI::Loader							=> 0,
 		Config::General								=> 0,
-		FindBin										=> 0,
+		FindBin::Real								=> 0,
 		Log::Dispatch::DBI							=> 0,
 		Test::More									=> 0,
 		Test::Pod									=> 0,

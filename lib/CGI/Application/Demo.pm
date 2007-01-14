@@ -22,7 +22,7 @@ use CGI::Application::Plugin::Session;
 use CGI::Simple;
 use Class::DBI::Loader;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 # -----------------------------------------------
 

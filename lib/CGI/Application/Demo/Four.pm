@@ -20,7 +20,7 @@ use CGI::Application::Plugin::Config::Context;
 use CGI::Simple;
 use DBI;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 # -----------------------------------------------
 

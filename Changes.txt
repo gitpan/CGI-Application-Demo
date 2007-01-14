@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::Application::Demo.
 
+1.03  Sub 14 Jan 11:13:00 2007
+	- Fix Build.PL and Makefile.PL to refer to FindBin::Real rather than FindBin
+
 1.02  Mon 28 Nov 14:58:00 2005
 	- Add One.pm, Two.pm, Three.pm, Four.pm and Five.pm, with corresponding
 		config and template files, and instance scripts. These module are

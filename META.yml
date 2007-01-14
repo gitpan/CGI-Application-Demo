@@ -1,10 +1,12 @@
---- #YAML:1.0
+---
 name: CGI-Application-Demo
-version: 1.02
+version: 1.03
 author:
-  - Ron Savage <ron@savage.net.au>
+  - 'Ron Savage <ron@savage.net.au>'
 abstract: A vehicle to showcase CGI::Application
 license: artistic
+resources:
+  license: http://opensource.org/licenses/artistic-license.php
 requires:
   CGI::Application: 0
   CGI::Application::Plugin::Config::Context: 0
@@ -17,7 +19,7 @@ requires:
   Class::DBI::Loader: 0
   Config::Context: 0
   Config::General: 0
-  FindBin: 0
+  FindBin::Real: 0
   HTML::Template: 0
   Log::Dispatch::DBI: 0
 build_requires:
@@ -26,32 +28,35 @@ build_requires:
 provides:
   CGI::Application::Demo:
     file: lib/CGI/Application/Demo.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Base:
     file: lib/CGI/Application/Demo/Base.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Create:
     file: lib/CGI/Application/Demo/Create.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Faculty:
     file: lib/CGI/Application/Demo/Faculty.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Five:
     file: lib/CGI/Application/Demo/Five.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Four:
     file: lib/CGI/Application/Demo/Four.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::LogDispatchDBI:
     file: lib/CGI/Application/Demo/LogDispatchDBI.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::One:
     file: lib/CGI/Application/Demo/One.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Three:
     file: lib/CGI/Application/Demo/Three.pm
-    version: 1.02
+    version: 1.03
   CGI::Application::Demo::Two:
     file: lib/CGI/Application/Demo/Two.pm
-    version: 1.02
-generated_by: Module::Build version 0.2611
+    version: 1.03
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

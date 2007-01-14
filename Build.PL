@@ -23,7 +23,7 @@ Module::Build -> new
 		Class::DBI::Loader							=> 0,
 		Config::Context								=> 0,
 		Config::General								=> 0,
-		FindBin										=> 0,
+		FindBin::Real								=> 0,
 		HTML::Template								=> 0,
 		Log::Dispatch::DBI							=> 0,
 	},

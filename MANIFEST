@@ -1,3 +1,4 @@
+Build.bat
 Build.PL
 cgi-bin/cgi-app-demo/cgi-app-demo.cgi
 cgi-bin/cgi-app-demo/cgi-app-five.cgi
@@ -26,6 +27,7 @@ lib/CGI/Application/Demo/Two.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
+META.yml
 README
 scripts/bu-demo
 scripts/create-1-table.pl
@@ -45,4 +47,3 @@ templates/cgi-app-demo/cgi-app-notes.tmpl
 templates/cgi-app-demo/cgi-app-options.tmpl
 templates/cgi-app-demo/cgi-app-three.tmpl
 templates/cgi-app-demo/cgi-app-two.tmpl
-META.yml

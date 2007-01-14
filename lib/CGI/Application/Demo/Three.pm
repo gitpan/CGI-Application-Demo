@@ -19,7 +19,7 @@ require 5.005_62;
 use CGI::Application::Plugin::Config::Context;
 use CGI::Simple;
 
-our $VERSION = '1.02';
+our $VERSION = '1.03';
 
 # -----------------------------------------------
 
